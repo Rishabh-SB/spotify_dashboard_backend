@@ -44,15 +44,14 @@ async def get_dashboard_metrics(dataset_id: str, start_date: Optional[str] = Non
 
     df["date"] = df.index.date
 
-    daily_hours = convert_keys_to_str((df.groupby("date")["ms_played"].sum() / 3600000).to_dict())
-
     weekly_group = df.groupby([df.index.isocalendar().year, df.index.isocalendar().week])["ms_played"].sum() / 3600000
     weekly_hours = {f"{year}-W{week}": val for (year, week), val in weekly_group.to_dict().items()}
 
     monthly_hours = convert_keys_to_str((df.groupby(df.index.to_period("M"))["ms_played"].sum() / 3600000).to_dict())
 
-    hour_minutes = (df.groupby(df.index.hour)["ms_played"].sum() / 60000).to_dict()
-    weekday_minutes = (df.groupby(df.index.day_name())["ms_played"].sum() / 60000).to_dict()
+    dfa = df.tz_convert("Asia/Kolkata")
+    hour_minutes = (dfa.groupby(dfa.index.hour)["ms_played"].sum() / 60000).to_dict()
+    weekday_minutes = (dfa.groupby(dfa.index.day_name())["ms_played"].sum() / 60000).to_dict()
 
     short_play_ms = 30 * 1000
     skip_rate = float((df["ms_played"] < short_play_ms).mean())
@@ -105,7 +104,7 @@ async def get_dashboard_metrics(dataset_id: str, start_date: Optional[str] = Non
 
     platform_percent = (df.groupby("platform")["ms_played"].sum() / df["ms_played"].sum()).to_dict()
 
-    platform_over_time_df = (df.groupby([df.index.date, "platform"])["ms_played"].sum() / 3600000).unstack(fill_value=0)
+    platform_over_time_df = (df.groupby([df.index.to_period("M"), "platform"])["ms_played"].sum() / 3600000).unstack(fill_value=0)
     platform_over_time_df.index = platform_over_time_df.index.map(str)
     platform_over_time = platform_over_time_df.to_dict(orient="index")
 
@@ -150,7 +149,6 @@ async def get_dashboard_metrics(dataset_id: str, start_date: Optional[str] = Non
             "top_albums": top_albums.to_dict(),
         },
         "section2": {
-            "daily_hours": daily_hours,
             "weekly_hours": weekly_hours,
             "monthly_hours": monthly_hours,
             "hour_minutes": hour_minutes,

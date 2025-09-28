@@ -33,8 +33,6 @@ def normalize_platform(platform_str):
         return "android"
     elif "ios" in key:
         return "ios"
-    elif "os x" in key or "mac os" in key or "macos" in key:
-        return "osx"
     elif "windows" in key:
         return "windows"
     elif "tizen" in key:
@@ -43,7 +41,10 @@ def normalize_platform(platform_str):
         return "web_player"
     elif "linux" in key:
         return "linux"
+    elif "os x" in key or "mac os" in key or "macos" or "osx" in key:
+        return "osx"
     else:
+        print(f"Unrecognized platform: {platform_str}")
         return "other"
 
 

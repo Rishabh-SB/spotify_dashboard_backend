@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Spotify Dashboard Backend Test</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 800px; margin: 2em auto; }
+  label { display: block; margin-top: 1em; }
+  pre { background: #eee; padding: 1em; overflow-x: auto; }
+</style>
+</head>
+<body>
+<h1>Spotify Dashboard Backend Test</h1>
+
+<form id="uploadForm">
+  <label>
+    Select JSON files to upload:
+    <input type="file" id="fileInput" name="files" multiple accept=".json" required />
+  </label>
+  <label>
+    Start date (YYYY-MM-DD):
+    <input type="date" id="startDate" name="startDate" required />
+  </label>
+  <label>
+    End date (YYYY-MM-DD):
+    <input type="date" id="endDate" name="endDate" required />
+  </label>
+  <button type="submit">Upload & Analyze</button>
+</form>
+
+<h2>Upload Response</h2>
+<pre id="uploadResponse">No data yet</pre>
+
+<h2>Dashboard Metrics</h2>
+<pre id="metricsResponse">No data yet</pre>
+
+<script>
+const uploadForm = document.getElementById("uploadForm");
+const fileInput = document.getElementById("fileInput");
+const startDateInput = document.getElementById("startDate");
+const endDateInput = document.getElementById("endDate");
+const uploadResponse = document.getElementById("uploadResponse");
+const metricsResponse = document.getElementById("metricsResponse");
+
+// Change this if your backend runs elsewhere
+const BASE_URL = "http://localhost:8000";
+
+uploadForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  if (fileInput.files.length === 0) {
+    alert("Select at least one file");
+    return;
+  }
+
+  const formData = new FormData();
+  for (let file of fileInput.files) {
+    formData.append("files", file);
+  }
+  formData.append("start_date", startDateInput.value);
+  formData.append("end_date", endDateInput.value);
+
+  uploadResponse.textContent = "Uploading...";
+  metricsResponse.textContent = "Waiting for upload...";
+
+  try {
+    // Upload files and get dataset_id
+    const uploadRes = await fetch(`${BASE_URL}/upload/`, {
+      method: "POST",
+      body: formData,
+    });
+    const uploadData = await uploadRes.json();
+    uploadResponse.textContent = JSON.stringify(uploadData, null, 2);
+
+    if (uploadData.error) {
+      metricsResponse.textContent = "Upload error, cannot fetch metrics.";
+      return;
+    }
+
+    const datasetId = uploadData.dataset_id;
+    metricsResponse.textContent = "Fetching dashboard metrics...";
+
+    // Fetch metrics data
+    const metricsRes = await fetch(`${BASE_URL}/metrics/${datasetId}?start_date=${startDateInput.value}&end_date=${endDateInput.value}`);
+    const metricsData = await metricsRes.json();
+
+    metricsResponse.textContent = JSON.stringify(metricsData, null, 2);
+  } catch (err) {
+    uploadResponse.textContent = "Error: " + err.message;
+    metricsResponse.textContent = "";
+  }
+});
+</script>
+
+</body>
+</html>

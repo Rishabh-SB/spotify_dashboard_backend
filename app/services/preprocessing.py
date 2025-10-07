@@ -57,9 +57,8 @@ def clean_and_enrich(df: pd.DataFrame) -> pd.DataFrame:
     """
     cols = [
         "ts",
-        "username",
+        "platform",
         "ms_played",
-        "conn_country",
         "master_metadata_track_name",
         "master_metadata_album_artist_name",
         "master_metadata_album_album_name",
